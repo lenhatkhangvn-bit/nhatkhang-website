@@ -10,7 +10,7 @@ import json, glob, os, html, re, datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_URL = 'https://lenhatkhangvn-bit.github.io/nhatkhang-website'   # đổi khi gắn tên miền riêng
-ASSET_V = '4'                                                          # tăng khi đổi CSS/JS
+ASSET_V = '5'                                                          # tăng khi đổi CSS/JS
 BRAND = 'Nhật Khang'
 STATUS_RUN = {'Đang thi công'}
 E = html.escape
@@ -48,6 +48,7 @@ def load():
         a = json.load(open(f, encoding='utf-8'))
         if a.get('draft'):
             continue
+        a.setdefault('bars', []); a.setdefault('facts', []); a.setdefault('items', []); a.setdefault('intro', [])
         t = sum(v for _, v in a['bars']) or 1
         a['bars'] = [(k, round(v / t * 100, 1)) for k, v in a['bars']]
         arts.append(a)
@@ -127,6 +128,22 @@ def page(a, arts):
     bars = ''.join(f'<div class="bar"><span>{E(k)}</span><span class="t"><i style="width:{v}%"></i></span><span class="p">{str(v).replace(".", ",")}%</span></div>' for k, v in a['bars'])
     items = ''.join(f'<li><b>{E(k)}:</b> {E(v)}</li>' for k, v in a['items'])
     facts = ''.join(f'<div><small>{E(k)}</small><b{" class=g" if "Suất" in k else ""}>{E(v)}</b></div>' for k, v in a['facts'])
+    video = ''
+    if a.get('video'):
+        v = a['video']
+        video = f'<div class="cover vid"><video src="../assets/img/{v["src"]}" poster="../assets/img/{v.get("poster", "")}" autoplay muted loop playsinline preload="metadata" aria-label="{E(v.get("label", a["seo_title"]))}"></video><span class="lbl-v">{E(v.get("label", "Video thực tế"))}</span></div>'
+        cover = ''
+    secs = ''.join(f'<h2>{E(h)}</h2>' + ''.join(f'<p>{E(x)}</p>' for x in ps) for h, ps in a.get('sections', []))
+    linked = ''
+    if a.get('links'):
+        by = {x['slug']: x for x in arts}
+        li = ''.join(f'<li><a href="{s_}.html"><b>{E(by[s_]["short"])}</b> – {E(by[s_]["seo_title"])}</a></li>' for s_ in a['links'] if s_ in by)
+        linked = f'<h2>{E(a.get("links_heading", "Dự án Nhật Khang tại đây"))}</h2><ul class="hl-list links">{li}</ul>'
+    cost = ''
+    if a['bars']:
+        cost = f'<h2>Cơ cấu chi phí theo báo giá</h2><p>Tỷ trọng từng nhóm hạng mục trên tổng giá trị báo giá (chưa VAT):</p><div class="bars">{bars}</div>'
+    itemsec = f'<h2>{E(a.get("items_heading", "Các hạng mục thi công chính"))}</h2><ul class="hl-list">{items}</ul>' if a['items'] else ''
+    disc = a.get('disclaimer', 'Số liệu trong bài được tổng hợp từ báo giá thực tế của Nhật Khang năm 2026, đã ẩn thông tin chủ nhà. Suất đầu tư mang tính tham khảo, chưa gồm VAT, và thay đổi theo vật liệu, hiện trạng và phạm vi từng căn.')
     faq = ''
     if a.get('faq'):
         faq = '<h2>Câu hỏi thường gặp</h2><div class="faq">' + ''.join(
@@ -149,17 +166,17 @@ def page(a, arts):
 </div></section>
 <section class="art"><div class="wrap art-grid">
   <article>
-    {cover}
-    <h2>Tổng quan</h2>{''.join(f"<p>{E(p)}</p>" for p in a["intro"])}
-    <h2>Các hạng mục thi công chính</h2><ul class="hl-list">{items}</ul>
-    <h2>Cơ cấu chi phí theo báo giá</h2>
-    <p>Tỷ trọng từng nhóm hạng mục trên tổng giá trị báo giá (chưa VAT):</p>
-    <div class="bars">{bars}</div>
-    <div class="disc">{E(a["note"])}</div>
+    {video}{cover}
+    <h2>{E(a.get("intro_heading", "Tổng quan"))}</h2>{''.join(f"<p>{E(p)}</p>" for p in a["intro"])}
+    {itemsec}
+    {secs}
+    {cost}
+    {linked}
+    {f'<div class="disc">{E(a["note"])}</div>' if a.get("note") else ''}
     {g}
     {faq}
-    <div class="cta-in"><div><b>Căn hộ của anh/chị có diện tích tương tự?</b><span>Gửi diện tích và bản vẽ, Nhật Khang lập báo giá chi tiết từng hạng mục.</span></div><a class="btn btn-gold" href="../index.html#bao-gia">Nhận báo giá</a></div>
-    <div class="disc">Số liệu trong bài được tổng hợp từ báo giá thực tế của Nhật Khang năm 2026, đã ẩn thông tin chủ nhà. Suất đầu tư mang tính tham khảo, chưa gồm VAT, và thay đổi theo vật liệu, hiện trạng và phạm vi từng căn. Xem thêm <a href="../index.html#bang-gia" style="color:#b88200;font-weight:600">bảng giá tham khảo</a>.</div>
+    <div class="cta-in"><div><b>{E(a.get("cta", "Căn hộ của anh/chị có diện tích tương tự?"))}</b><span>Gửi diện tích và bản vẽ, Nhật Khang lập báo giá chi tiết từng hạng mục.</span></div><a class="btn btn-gold" href="../index.html#bao-gia">Nhận báo giá</a></div>
+    <div class="disc">{E(disc)} Xem thêm <a href="../index.html#bang-gia" style="color:#b88200;font-weight:600">bảng giá tham khảo</a>.</div>
   </article>
   <aside class="side">
     <div class="box dark"><h3>Muốn biết căn nhà mình hết bao nhiêu?</h3><p style="color:#bbb">Gửi diện tích và bản vẽ (nếu có), Nhật Khang lập báo giá chi tiết từng hạng mục.</p><a class="btn btn-gold" href="../index.html#bao-gia">Nhận báo giá</a></div>
@@ -177,10 +194,11 @@ def card(a):
           if a.get('cover') else f'<div class="th noimg"><span>{E(a["short"])}</span>')
     st = 'run' if a['status'] in STATUS_RUN else ''
     fx = dict(a['facts'])
-    meta = ''.join(f'<span>{E(fx[k])}</span>' for k in ('Diện tích', 'Phạm vi', 'Suất đầu tư tham khảo') if k in fx)
+    keys = [k for k in ('Diện tích', 'Phạm vi', 'Suất đầu tư tham khảo') if k in fx] or [k for k, _ in a['facts']][:3]
+    meta = ''.join(f'<span>{E(fx[k])}</span>' for k in keys)
     return (f'<a class="pc reveal" href="du-an/{a["slug"]}.html">{th}<span class="st {st}">{E(a["status"])}</span></div>'
             f'<div class="bd"><div class="meta">{meta}</div><h3>{E(a["title"].split(" – ")[0])}</h3><p>{E(a["card"])}</p>'
-            f'<span class="more">Xem hạng mục thi công →</span></div></a>\n')
+            f'<span class="more">{E(a.get("more", "Xem hạng mục thi công →"))}</span></div></a>\n')
 
 
 def main():

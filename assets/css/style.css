@@ -320,3 +320,8 @@ table.dg td.num{white-space:nowrap;font-variant-numeric:tabular-nums;text-align:
 .cta-in{margin-top:30px;background:var(--ink-3);color:#ddd;border-radius:14px;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
 .cta-in b{display:block;color:#fff;font-size:17px;margin-bottom:4px}
 .cta-in span{font-size:14.5px;color:#bbb}
+.cover.vid{position:relative;background:#000}
+.cover.vid video{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}
+.lbl-v{position:absolute;top:12px;left:12px;background:var(--gold);color:var(--ink-3);font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+.hl-list.links li a:hover{color:#b88200}
+.art .gallery .gi.tall img{object-position:center}
