@@ -1,3 +1,6 @@
+// Form báo giá gửi về email qua FormSubmit (formsubmit.co).
+// Sau khi kích hoạt, thay email bằng mã ẩn danh FormSubmit gửi trong email để tránh spam.
+var FORM_ENDPOINT='https://formsubmit.co/ajax/lenhatkhang.vn@gmail.com';
 (function(){
   var $=function(s,c){return (c||document).querySelector(s)};
   var $$=function(s,c){return [].slice.call((c||document).querySelectorAll(s))};
@@ -68,7 +71,19 @@
       var ok=true;['name','phone'].forEach(function(id){var el=document.getElementById(id);var bad=!el.value.trim();el.style.borderColor=bad?'#d64545':'';if(bad)ok=false});
       if(!ok)return;
       var s='YÊU CẦU BÁO GIÁ – NHẬT KHANG\nHọ tên: '+g('name')+'\nSĐT/Zalo: '+g('phone')+'\nLoại công trình: '+g('type')+'\nDiện tích: '+(g('area')||'—')+' m²\nDự án/toà: '+(g('proj')||'—')+'\nHạng mục: '+g('scope')+'\nGhi chú: '+(g('msg')||'—');
-      $('#summary').textContent=s;$('#fbody').style.display='none';$('#done').style.display='block';
+      var btn=$('button[type=submit]',form);btn.disabled=true;btn.textContent='Đang gửi...';
+      var showDone=function(sent){
+        $('#summary').textContent=s;$('#fbody').style.display='none';$('#done').style.display='block';
+        if(sent){$('#done h3').textContent='Đã gửi yêu cầu thành công';$('#done .sub').textContent='Nhật Khang đã nhận thông tin và sẽ liên hệ lại sớm. Nếu cần gấp, anh/chị nhắn Zalo hoặc gọi hotline 0903 590 352.';}
+      };
+      var data={_subject:'Yêu cầu báo giá web – '+g('name')+' – '+g('phone'),_template:'table',_captcha:'false',
+        'Họ tên':g('name'),'SĐT/Zalo':g('phone'),'Loại công trình':g('type'),'Diện tích (m²)':g('area'),'Dự án/toà':g('proj'),'Hạng mục':g('scope'),'Ghi chú':g('msg'),'Trang gửi':location.href};
+      var hp=$('#_honey');if(hp&&hp.value){showDone(true);return}
+      try{
+        fetch(FORM_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)})
+          .then(function(r){return r.json().catch(function(){return {}}).then(function(j){showDone(r.ok&&String(j.success)!=='false')})})
+          .catch(function(){showDone(false)});
+      }catch(err){showDone(false)}
     });
     var cp=$('#copy');
     if(cp)cp.addEventListener('click',function(){
